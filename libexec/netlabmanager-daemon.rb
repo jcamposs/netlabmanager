@@ -4,11 +4,8 @@
 # At minimum you need just the first line (without the block), or a lot
 # of strange things might start happening...
 DaemonKit::Application.running! do |config|
-  # Trap signals with blocks or procs
-  # config.trap( 'INT' ) do
-  #   # do something clever
-  # end
-  # config.trap( 'TERM', Proc.new { puts 'Going down' } )
+  config.trap( 'INT' ) { NetlabManager.stop_services }
+  config.trap( 'TERM' ) { NetlabManager.stop_services }
 end
 
 # IMPORTANT CONFIGURATION NOTE
@@ -27,6 +24,8 @@ DaemonKit::AMQP.run do |connection|
   #   DaemonKit.logger.debug("AMQP connection status changed: #{status}")
   #   client.reconnect(false, 1)
   # end
+
+  NetlabManager.init_services
 
   amq = AMQP::Channel.new
   amq.queue('test').subscribe do |msg|
