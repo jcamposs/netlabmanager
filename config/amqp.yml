@@ -10,6 +10,7 @@
 # * vhost    - Vhost to connect to
 # * port     - Port where the broker is running
 # * ssl      - Use ssl or not
+# * heartbeat - Connection heartbeat, in seconds. 0 means no heartbeat.
 # * timeout  - Timeout
 
 defaults: &defaults
@@ -17,6 +18,7 @@ defaults: &defaults
   pass: guest
   host: localhost
   vhost: /
+  heartbeat: 1
 
 development:
   <<: *defaults
