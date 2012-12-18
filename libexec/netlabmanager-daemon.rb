@@ -26,9 +26,4 @@ DaemonKit::AMQP.run do |connection|
   # end
 
   NetlabManager.init_services
-
-  amq = AMQP::Channel.new
-  amq.queue('test').subscribe do |msg|
-    DaemonKit.logger.debug "Received message: #{msg.inspect}"
-  end
 end
