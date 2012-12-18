@@ -1,3 +1,6 @@
+class VirtualMachine < ActiveRecord::Base
+end
+
 class Workspace < NetlabManager::ServiceHandler
   def start
     @chan = AMQP::Channel.new
@@ -51,9 +54,9 @@ class Workspace < NetlabManager::ServiceHandler
 
   def get_workspace id
     nodes = {}
-    #VirtualMachine.find_all_by_workspace_id(id).each do |vm|
-    #  nodes[vm.name] = vm.state
-    #end
+    VirtualMachine.find_all_by_workspace_id(id).each do |vm|
+      nodes[vm.name] = vm.state
+    end
 
     compose_json_reply(nodes, id)
   end
