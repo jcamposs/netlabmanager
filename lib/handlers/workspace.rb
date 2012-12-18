@@ -1,12 +1,8 @@
 class Workspace < NetlabManager::ServiceHandler
-  def initialize
+  def start
     @chan = AMQP::Channel.new
     @queue = @chan.queue("netlab.services.workspace.state", :exclusive => true, :auto_delete => true)
-    @initialized = true
-  end
-
-  def start
-    return false if not @initialized
+    @running = true
 
     @queue.subscribe(:ack => true) do |metadata, payload|
       DaemonKit.logger.debug "[requests] Workspace id #{payload}."
@@ -26,10 +22,14 @@ class Workspace < NetlabManager::ServiceHandler
   end
 
   def stop
-    return if not @initialized
+    if not @running
+      DaemonKit.logger.error "Error: Workspace class is not started"
+      return false
+    end
+
     @queue.delete
     @chan.close
-    @initialized = false
+    @running = false
   end
 
   private
