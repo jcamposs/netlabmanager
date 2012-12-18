@@ -10,7 +10,7 @@ module NetlabManager
     Dir[File.join(svc_dir, "*.rb")].each { |file| require file }
     @@services.each do |handler|
       DaemonKit.logger.debug "Starting service #{handler.class.name}"
-      handler.stop
+      handler.start
     end
   end
 
