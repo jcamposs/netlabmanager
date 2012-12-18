@@ -2,28 +2,34 @@
 # already included in your load path, so no need to specify it.
 
 module NetlabManager
+  @@tmp_l = []
   @@services = []
 
   def self.init_services
     DaemonKit.logger.debug "Loading services..."
     svc_dir = File.join(DaemonKit.root, "lib", "handlers")
     Dir[File.join(svc_dir, "*.rb")].each { |file| require file }
-    @@services.each do |handler|
-      DaemonKit.logger.debug "Starting service #{handler.class.name}"
-      handler.start
+    @@tmp_l.each do |svc|
+      DaemonKit.logger.debug "Starting service #{svc.class.name}"
+      if svc.start
+        @@services.push svc
+      else
+        DaemonKit.logger.warn "Service #{svc.class.name} could not be started"
+      end
     end
+    @@tmp_l.clear
   end
 
   def self.stop_services
     DaemonKit.logger.debug "Stop services..."
-    @@services.each do |handler|
-      DaemonKit.logger.debug "Stop service #{handler.class.name}"
-      handler.stop
+    @@services.each do |svc|
+      DaemonKit.logger.debug "Stop service #{svc.class.name}"
+      svc.stop
     end
   end
 
-  def self.add_handler service
-    @@services.push service
+  def self.add_handler handler
+    @@tmp_l.push handler
   end
 
   class ServiceHandler
