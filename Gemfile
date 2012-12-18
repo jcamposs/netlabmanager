@@ -20,6 +20,9 @@ gem 'amqp'
 # synchrony
 gem 'em-synchrony'
 
+gem 'mysql2'
+gem 'activerecord'
+
 group :development, :test do
   gem 'rspec'
 end
