@@ -16,6 +16,10 @@ gem 'safely'
 # gem 'toadhopper' # For reporting exceptions to hoptoad
 # gem 'mail' # For reporting exceptions via mail
 gem 'amqp'
+
+# synchrony
+gem 'em-synchrony'
+
 group :development, :test do
   gem 'rspec'
 end
