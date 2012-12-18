@@ -26,7 +26,7 @@ class Workspace < NetlabManager::ServiceHandler
 
   def stop
     if not @running
-      DaemonKit.logger.error "Error: Workspace class is not started"
+      DaemonKit.logger.error "Error: Workspace service is not started"
       return false
     end
 
