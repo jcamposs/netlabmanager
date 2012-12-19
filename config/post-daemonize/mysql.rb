@@ -1,2 +1,1 @@
-config = DaemonKit::Config.load("mysql.yml")
-ActiveRecord::Base.establish_connection(config)
+ActiveRecord::Base.establish_connection(DaemonKit::Config.load("mysql.yml"))
