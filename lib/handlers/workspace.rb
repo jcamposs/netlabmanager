@@ -1,6 +1,3 @@
-class VirtualMachine < ActiveRecord::Base
-end
-
 class Workspace < NetlabManager::ServiceHandler
   def start
     @chan = AMQP::Channel.new

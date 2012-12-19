@@ -5,4 +5,6 @@ rescue LoadError
   exit 1
 end
 
-#TODO: load models
+# load models
+models_dir = File.join(DaemonKit.root, "app", "models")
+Dir[File.join(models_dir, "*.rb")].each { |file| require file }
