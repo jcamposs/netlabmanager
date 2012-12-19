@@ -44,9 +44,7 @@ module NetlabHandler
         nodes[vm.name] = vm.state
       end
 
-      msg_dir = File.join(DaemonKit.root, "app", "messages")
-      template = ERB.new File.new(File.join(msg_dir, "workspace_state.js.erb")).read
-      return template.result(binding).split.join
+      return NetlabManager.render("workspace_state.js.erb", binding)
     end
   end
 end
