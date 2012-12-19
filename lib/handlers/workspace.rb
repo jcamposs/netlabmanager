@@ -2,7 +2,8 @@ module NetlabHandler
   class Workspace < NetlabManager::ServiceHandler
     def start
       @chan = AMQP::Channel.new
-      @queue = @chan.queue("netlab.services.workspace.state", :auto_delete => true)
+      queue_name = "#{DAEMON_CONF[:root_service]}.workspace.state"
+      @queue = @chan.queue(queue_name, :auto_delete => true)
       @running = true
 
       @queue.subscribe(:ack => true) do |metadata, payload|
