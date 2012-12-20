@@ -1,5 +1,3 @@
-require 'erb'
-
 module NetlabHandler
   class Workspace < NetlabManager::ServiceHandler
     def start
