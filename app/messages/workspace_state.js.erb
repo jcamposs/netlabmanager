@@ -1,14 +1,21 @@
 {
   "workspace": <%= id %>,
-  "nodes": [
-    <% nodes.keys.each_with_index do |node, index| %>
-      {
-        "name": "<%= node %>",
-        "state": "<%= nodes[node] %>"
-      }
-      <% if index < nodes.keys.size - 1 %>
-        ,
+
+  <% if error %>
+    "status": "error",
+    "cause": "<%= cause %>"
+  <% else %>
+    "status": "success",
+    "nodes": [
+      <% nodes.keys.each_with_index do |node, index| %>
+        {
+          "name": "<%= node %>",
+          "state": "<%= nodes[node] %>"
+        }
+        <% if index < nodes.keys.size - 1 %>
+          ,
+        <% end %>
       <% end %>
-    <% end %>
-  ]
+    ]
+  <% end %>
 }

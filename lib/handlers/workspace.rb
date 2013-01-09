@@ -8,17 +8,15 @@ module NetlabHandler
 
       @queue.subscribe(:ack => true) do |metadata, payload|
         DaemonKit.logger.debug "[requests] Workspace id #{payload}."
-        obj = JSON.parse(payload)
-
-        EventMachine.synchrony do
-          reply = workspace_state_reply obj["workspace"]
-
-          @chan.default_exchange.publish(reply,
-            :routing_key => metadata.reply_to,
-            :correlation_id => metadata.message_id,
-            :content_type => "application/json",
-            :mandatory => true)
-          metadata.ack
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            rep = workspace_state_reply req["workspace"]
+            reply(metadata, rep)
+          end
+        rescue
+          rep = error_msg("Protocol error")
+          reply(metadata, rep)
         end
       end
 
@@ -37,9 +35,23 @@ module NetlabHandler
     end
 
     private
+    def reply(metadata, reply)
+      @chan.default_exchange.publish(reply,
+        :routing_key => metadata.reply_to,
+        :correlation_id => metadata.message_id,
+        :content_type => "application/json",
+        :mandatory => true)
+      metadata.ack
+    end
+
+    def error_msg(cause)
+      error = true
+      return NetlabManager.render("workspace_state.js.erb", binding)
+    end
+
     def workspace_state_reply id
       nodes = {}
-
+      error = false
       VirtualMachine.find_all_by_workspace_id(id).each do |vm|
         nodes[vm.name] = vm.state
       end
