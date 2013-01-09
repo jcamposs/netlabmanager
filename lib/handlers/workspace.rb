@@ -8,8 +8,10 @@ module NetlabHandler
 
       @queue.subscribe(:ack => true) do |metadata, payload|
         DaemonKit.logger.debug "[requests] Workspace id #{payload}."
+        obj = JSON.parse(payload)
+
         EventMachine.synchrony do
-          reply = workspace_state_reply payload
+          reply = workspace_state_reply obj["workspace"]
 
           @chan.default_exchange.publish(reply,
             :routing_key => metadata.reply_to,
