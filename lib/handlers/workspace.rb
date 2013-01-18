@@ -26,7 +26,7 @@ module NetlabHandler
     def stop
       if not @running
         DaemonKit.logger.error "Error: Workspace service is not started"
-        return false
+        return
       end
 
       @queue.delete
