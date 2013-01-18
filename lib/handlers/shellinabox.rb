@@ -23,6 +23,7 @@ module NetlabHandler
       end
 
       shutdown_started_queue
+      shutdown_stopped_queue
       @running = false
     end
 
@@ -64,6 +65,10 @@ module NetlabHandler
 
     def shutdown_started_queue
       @start_chan.close
+    end
+
+    def shutdown_stopped_queue
+      @stop_chan.close
     end
   end
 end
