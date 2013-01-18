@@ -29,7 +29,6 @@ module NetlabHandler
         return
       end
 
-      @queue.delete
       @chan.close
       @running = false
     end
