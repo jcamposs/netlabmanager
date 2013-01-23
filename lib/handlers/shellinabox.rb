@@ -55,11 +55,12 @@ module NetlabHandler
         DaemonKit.logger.debug "[requests] stopped shellinabox #{payload}."
         begin
           req = JSON.parse(payload)
-          #Todo
+          EventMachine.synchrony do
+            uptade_stopped_daemon(req)
+          end
         rescue Exception => e
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
-          #Todo:
         end
       end
     end
@@ -81,6 +82,18 @@ module NetlabHandler
       rescue Exception => e
         DaemonKit.logger.error e.message
         DaemonKit.logger.error e.backtrace
+      end
+    end
+
+    def uptade_stopped_daemon(msg)
+      msg["shellinaboxes"].each do |id|
+        begin
+          shell = Shellinabox.find(id)
+          shell.destroy if shell.host_name == msg["host_name"]
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
       end
     end
   end
