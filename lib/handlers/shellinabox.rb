@@ -36,11 +36,12 @@ module NetlabHandler
         DaemonKit.logger.debug "[requests] started shellinabox #{payload}."
         begin
           req = JSON.parse(payload)
-          #Todo
+          EventMachine.synchrony do
+            uptade_started_daemon(req)
+          end
         rescue Exception => e
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
-          #Todo:
         end
       end
     end
@@ -69,6 +70,18 @@ module NetlabHandler
 
     def shutdown_stopped_queue
       @stop_chan.close
+    end
+
+    def uptade_started_daemon(msg)
+      begin
+        shell = Shellinabox.find(msg["shellinabox"])
+        shell.host_name = msg["host_name"]
+        shell.port_number = msg["port_number"]
+        shell.save
+      rescue Exception => e
+        DaemonKit.logger.error e.message
+        DaemonKit.logger.error e.backtrace
+      end
     end
   end
 end
