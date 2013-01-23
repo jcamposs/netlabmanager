@@ -1,5 +1,5 @@
 module NetlabHandler
-  class Workspace < NetlabManager::ServiceHandler
+  class WorkspaceHandler < NetlabManager::ServiceHandler
     def start
       @chan = AMQP::Channel.new
       queue_name = "#{DAEMON_CONF[:root_service]}.workspace.state"

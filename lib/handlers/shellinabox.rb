@@ -1,5 +1,5 @@
 module NetlabHandler
-  class Shellinabox < NetlabManager::ServiceHandler
+  class ShellinaboxHandler < NetlabManager::ServiceHandler
     def start
       init_amqp_stuff
       @running = true
