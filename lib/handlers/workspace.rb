@@ -2,24 +2,10 @@ module NetlabHandler
   class WorkspaceHandler < NetlabManager::ServiceHandler
     def start
       @chan = AMQP::Channel.new
-      queue_name = "#{DAEMON_CONF[:root_service]}.workspace.state"
-      @queue = @chan.queue(queue_name, :durable => true)
+
+      init_state_svc
+
       @running = true
-
-      @queue.subscribe(:ack => true) do |metadata, payload|
-        DaemonKit.logger.debug "[requests] Workspace id #{payload}."
-        begin
-          req = JSON.parse(payload)
-          EventMachine.synchrony do
-            rep = workspace_state_reply req["workspace"]
-            reply(metadata, rep)
-          end
-        rescue
-          rep = error_msg("Protocol error")
-          reply(metadata, rep)
-        end
-      end
-
       return true
     end
 
@@ -34,6 +20,25 @@ module NetlabHandler
     end
 
     private
+    def init_state_svc
+      queue_name = "#{DAEMON_CONF[:root_service]}.workspace.state"
+      @queue = @chan.queue(queue_name, :durable => true)
+
+      @queue.subscribe(:ack => true) do |metadata, payload|
+        DaemonKit.logger.debug "[requests] Workspace id #{payload}."
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            rep = workspace_state_reply req["workspace"]
+            reply(metadata, rep)
+          end
+        rescue
+          rep = error_msg("Protocol error")
+          reply(metadata, rep)
+        end
+      end
+    end
+
     def reply(metadata, reply)
       @chan.default_exchange.publish(reply,
         :routing_key => metadata.reply_to,
