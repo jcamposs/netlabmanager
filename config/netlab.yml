@@ -1,8 +1,11 @@
 development:
   root_service: netlab.services.development
+  root_event: netlab.events.development
 
 test:
   root_service: netlab.services.test
+  root_event: netlab.events.test
 
 production:
   root_service: netlab.services.production
+  root_event: netlab.events.production

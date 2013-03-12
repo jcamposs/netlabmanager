@@ -88,7 +88,7 @@ module NetlabHandler
         "nodes" => nodes
       }
 
-      ex = @chan.direct("netlab.events.development.workspace.#{workspace}")
+      ex = @chan.direct("#{DAEMON_CONF[:root_event]}.workspace.#{workspace}")
       ex.publish(event.to_json, {:content_type => "application/json"}) do
         DaemonKit.logger.debug("<< #{event.to_json}")
       end
