@@ -87,9 +87,9 @@ module NetlabHandler
     end
 
     def uptade_workspace(msg)
-      begin
-        nodes = []
+      nodes = []
 
+      VirtualMachine.transaction do
         msg["nodes"].each do |node|
           vm = VirtualMachine.find_by_workspace_id_and_name(msg["workspace"],
                                                                    node["name"])
@@ -107,12 +107,9 @@ module NetlabHandler
             })
           end
         end
-        return nodes
-      rescue Exception => e
-        DaemonKit.logger.error e.message
-        DaemonKit.logger.error e.backtrace
-        return nil
       end
+
+      return nodes
     end
   end
 end
