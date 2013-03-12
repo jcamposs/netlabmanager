@@ -49,7 +49,7 @@ module NetlabHandler
           req = JSON.parse(payload)
           EventMachine.synchrony do
             nodes =  uptade_workspace(req)
-            send_update_notif(req["workspace"], nodes) if nodes
+            send_update_notif(req["workspace"], nodes) if nodes.length > 0
           end
         rescue Exception => e
           DaemonKit.logger.error e.message
