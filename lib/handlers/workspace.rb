@@ -83,7 +83,15 @@ module NetlabHandler
     end
 
     def send_update_notif(workspace, nodes)
-      DaemonKit.logger.debug("TODO: Send notification");
+      event = {
+        "workspace" => workspace,
+        "nodes" => nodes
+      }
+
+      ex = @chan.direct("netlab.events.development.workspace.#{workspace}")
+      ex.publish(event.to_json, {:content_type => "application/json"}) do
+        DaemonKit.logger.debug("<< #{event.to_json}")
+      end
     end
 
     def uptade_workspace(msg)
