@@ -4,6 +4,7 @@ module NetlabHandler
       @chan = AMQP::Channel.new
 
       init_state_svc
+      init_update_svc
 
       @running = true
       return true
@@ -39,6 +40,24 @@ module NetlabHandler
       end
     end
 
+    def init_update_svc
+      queue_name = "#{DAEMON_CONF[:root_service]}.workspace.update"
+      @update_queue = @chan.queue(queue_name, :durable => true)
+      @update_queue.subscribe() do |metadata, payload|
+        DaemonKit.logger.debug "[requests] Workspace Update #{payload}."
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            nodes =  uptade_workspace(req)
+            send_update_notif(req["workspace"], nodes) if nodes
+          end
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
+      end
+    end
+
     def reply(metadata, reply)
       @chan.default_exchange.publish(reply,
         :routing_key => metadata.reply_to,
@@ -61,6 +80,39 @@ module NetlabHandler
       end
 
       return NetlabManager.render("workspace_state.js.erb", binding)
+    end
+
+    def send_update_notif(workspace, nodes)
+      DaemonKit.logger.debug("TODO: Send notification");
+    end
+
+    def uptade_workspace(msg)
+      begin
+        nodes = []
+
+        msg["nodes"].each do |node|
+          vm = VirtualMachine.find_by_workspace_id_and_name(msg["workspace"],
+                                                                   node["name"])
+          if vm and vm.state != node["state"]
+            vm.state = node["state"]
+            if vm.state == "started"
+              vm.port_number = node["port"]
+            else
+              vm.port_number = -1
+            end
+            vm.save
+            nodes.push({
+              "name" => vm.name,
+              "state" => vm.state
+            })
+          end
+        end
+        return nodes
+      rescue Exception => e
+        DaemonKit.logger.error e.message
+        DaemonKit.logger.error e.backtrace
+        return nil
+      end
     end
   end
 end
