@@ -86,6 +86,21 @@ module NetlabHandler
       @stop_queue = @chan.queue(queue_name, :durable => true)
       @stop_queue.subscribe() do |metadata, payload|
         DaemonKit.logger.debug "[requests] Workspace stop #{payload}."
+        begin
+          req = JSON.parse(payload)
+          msg = {
+            "workspace" => req["workspace"],
+            "parameters" => []
+          }
+          req["nodes"].each do |name|
+            msg["parameters"].push({ "name" => name })
+          end
+
+          #TODO: Send msg to the proper workspace queue
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
       end
     end
 
