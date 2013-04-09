@@ -65,6 +65,19 @@ module NetlabHandler
       @start_queue = @chan.queue(queue_name, :durable => true)
       @start_queue.subscribe() do |metadata, payload|
         DaemonKit.logger.debug "[requests] Workspace start #{payload}."
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            msg = {
+              "workspace" => req["workspace"],
+              "parameters" => get_start_params(req["workspace"], req["nodes"])
+            }
+            #TODO: Send msg to the proper workspace queue
+          end
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
       end
     end
 
@@ -136,6 +149,35 @@ module NetlabHandler
       end
 
       return nodes
+    end
+
+    def get_start_params(id, nodes)
+      parameters = []
+      nodes.each do |name|
+        vm = VirtualMachine.find_by_workspace_id_and_name(id, name)
+        if vm
+          node = create_node(vm)
+          parameters.push(node)
+        end
+      end
+      return parameters
+    end
+
+    def create_node(vm)
+      node = {
+        "name" => vm.name,
+        "type" => vm.node_type,
+        "network" => []
+      }
+
+      Interface.find_all_by_virtual_machine_id(vm).each do |i|
+        node["network"].push({
+          "interface" => i.name,
+          "collision_domain" => i.collision_domain.name
+        })
+      end
+
+      return node
     end
   end
 end
