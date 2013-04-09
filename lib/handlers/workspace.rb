@@ -5,6 +5,7 @@ module NetlabHandler
 
       init_state_svc
       init_update_svc
+      init_start_svc
 
       @running = true
       return true
@@ -55,6 +56,14 @@ module NetlabHandler
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
         end
+      end
+    end
+
+    def init_start_svc
+      queue_name = "#{DAEMON_CONF[:root_service]}.workspace.start"
+      @start_queue = @chan.queue(queue_name, :durable => true)
+      @start_queue.subscribe() do |metadata, payload|
+        DaemonKit.logger.debug "[requests] Workspace start #{payload}."
       end
     end
 
