@@ -72,7 +72,12 @@ module NetlabHandler
               "workspace" => req["workspace"],
               "parameters" => get_start_params(req["workspace"], req["nodes"])
             }
-            #TODO: Send msg to the proper workspace queue
+
+            rkey = "workspace.#{DaemonKit.env}.#{req['workspace']}.vm_start"
+            @chan.default_exchange.publish(msg.to_json, {
+              :routing_key => rkey,
+              :content_type => "application/json"
+            })
           end
         rescue Exception => e
           DaemonKit.logger.error e.message
@@ -96,7 +101,11 @@ module NetlabHandler
             msg["parameters"].push({ "name" => name })
           end
 
-          #TODO: Send msg to the proper workspace queue
+          rkey = "workspace.#{DaemonKit.env}.#{req['workspace']}.vm_stop"
+          @chan.default_exchange.publish(msg.to_json, {
+            :routing_key => rkey,
+            :content_type => "application/json"
+          })
         rescue Exception => e
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
