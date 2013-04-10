@@ -12,6 +12,8 @@ module NetlabHandler
 
     private
     def init_amqp_stuff
+      @chan = AMQP::Channel.new
+
       init_started_queue
       init_stopped_queue
     end
@@ -22,15 +24,13 @@ module NetlabHandler
         return
       end
 
-      shutdown_started_queue
-      shutdown_stopped_queue
+      @chan.close
       @running = false
     end
 
     def init_started_queue
-      @start_chan = AMQP::Channel.new
       queue_name = "#{DAEMON_CONF[:root_service]}.shellinabox.started"
-      @start_queue = @start_chan.queue(queue_name, :durable => true)
+      @start_queue = @chan.queue(queue_name, :durable => true)
 
       @start_queue.subscribe do |metadata, payload|
         DaemonKit.logger.debug "[requests] started shellinabox #{payload}."
@@ -47,9 +47,8 @@ module NetlabHandler
     end
 
     def init_stopped_queue
-      @stop_chan = AMQP::Channel.new
       queue_name = "#{DAEMON_CONF[:root_service]}.shellinabox.stopped"
-      @stop_queue = @stop_chan.queue(queue_name, :durable => true)
+      @stop_queue = @chan.queue(queue_name, :durable => true)
 
       @stop_queue.subscribe do |metadata, payload|
         DaemonKit.logger.debug "[requests] stopped shellinabox #{payload}."
@@ -63,14 +62,6 @@ module NetlabHandler
           DaemonKit.logger.error e.backtrace
         end
       end
-    end
-
-    def shutdown_started_queue
-      @start_chan.close
-    end
-
-    def shutdown_stopped_queue
-      @stop_chan.close
     end
 
     def uptade_started_daemon(msg)
