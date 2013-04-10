@@ -14,6 +14,10 @@ module NetlabHandler
     def init_amqp_stuff
       @chan = AMQP::Channel.new
 
+      #Request queues:
+      init_connect_svc
+
+      #Event queues:
       init_started_queue
       init_stopped_queue
     end
@@ -26,6 +30,14 @@ module NetlabHandler
 
       @chan.close
       @running = false
+    end
+
+    def init_connect_svc
+      queue_name = "#{DAEMON_CONF[:root_service]}.shellinabox.connect"
+      @connect_queue = @chan.queue(queue_name, :durable => true)
+      @connect_queue.subscribe() do |metadata, payload|
+        DaemonKit.logger.debug "[requests] Connect Shellinabox #{payload}."
+      end
     end
 
     def init_started_queue
