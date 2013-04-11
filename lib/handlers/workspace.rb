@@ -140,6 +140,7 @@ module NetlabHandler
     def send_update_notif(workspace, nodes)
       event = {
         "workspace" => workspace,
+        "type" => "update",
         "nodes" => nodes
       }
 
