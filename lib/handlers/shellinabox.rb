@@ -37,6 +37,21 @@ module NetlabHandler
       @connect_queue = @chan.queue(queue_name, :durable => true)
       @connect_queue.subscribe() do |metadata, payload|
         DaemonKit.logger.debug "[requests] Connect Shellinabox #{payload}."
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            shell = get_shellinabox(req)
+            if shell
+              send_shellinabox_notif(shell)
+            else
+              shell = create_shellinabox(req)
+              send_create_shellinabox_req(shell)
+            end
+          end
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
       end
     end
 
@@ -97,6 +112,62 @@ module NetlabHandler
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
         end
+      end
+    end
+
+    def get_shellinabox(req)
+      vm = VirtualMachine.find_by_workspace_id_and_name(req["workspace"],
+                                                                    req["node"])
+      return null if not vm
+
+      shell = Shellinabox.find_by_virtual_machine_id_and_user_id(vm.id,
+                                                                    req["user"])
+
+      return shell
+    end
+
+    def create_shellinabox(req)
+      vm = VirtualMachine.find_by_workspace_id_and_name(req["workspace"],
+                                                                    req["node"])
+
+      return nil if not vm
+
+      shell = Shellinabox.new
+      shell.user_id = req["user"]
+      shell.virtual_machine_id = vm.id
+      shell.save
+
+      return shell
+    end
+
+    def send_create_shellinabox_req(shell)
+      if not shell
+        DaemonKit.logger.error "Error: Unable to create shell process"
+        return
+      end
+
+      req = {
+        "id" => shell.id,
+        "user_id" => shell.user_id,
+        "vm_port" => shell.virtual_machine.port_number,
+        "vm_proxy" => shell.virtual_machine.workspace.proxy
+      }
+
+      rkey = "shellmanager.#{DaemonKit.env}.start"
+
+      @chan.default_exchange.publish(req.to_json, {
+        :routing_key => rkey,
+        :content_type => "application/json"}
+      )
+    end
+
+    def send_shellinabox_notif(shell)
+      if not shell
+        DaemonKit.logger.error "Error: No shellinabox instance"
+      elsif shell.port_number < 0 or not shell.host_name
+        DaemonKit.logger.error "Error: Shellinabox process is not started yet"
+      else
+        DaemonKit.logger.debug "Send shellinabox notification"
       end
     end
   end
