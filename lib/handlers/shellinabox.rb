@@ -44,10 +44,31 @@ module NetlabHandler
           EventMachine.synchrony do
             shell = get_shellinabox(req)
             if shell
-              send_shellinabox_notif(shell)
+              send_connected_shellinabox_notif(shell)
             else
               shell = create_shellinabox(req)
               send_create_shellinabox_req(shell)
+            end
+          end
+        rescue Exception => e
+          DaemonKit.logger.error e.message
+          DaemonKit.logger.error e.backtrace
+        end
+      end
+    end
+
+    def init_disconnect_svc
+      queue_name = "#{DAEMON_CONF[:root_service]}.shellinabox.disconnect"
+      @disconnect_queue = @chan.queue(queue_name, :durable => true)
+      @disconnect_queue.subscribe() do |metadata, payload|
+        begin
+          req = JSON.parse(payload)
+          EventMachine.synchrony do
+            shell = get_shellinabox(req)
+            if shell
+              destroy_shellinabox(shell)
+            else
+              send_disconnected_shellinabox_notif(req)
             end
           end
         rescue Exception => e
@@ -99,6 +120,7 @@ module NetlabHandler
         shell.host_name = msg["host_name"]
         shell.port_number = msg["port_number"]
         shell.save
+        send_connected_shellinabox_notif(shell)
       rescue Exception => e
         DaemonKit.logger.error e.message
         DaemonKit.logger.error e.backtrace
@@ -109,7 +131,9 @@ module NetlabHandler
       msg["shellinaboxes"].each do |id|
         begin
           shell = Shellinabox.find(id)
-          shell.destroy if shell.host_name == msg["host_name"]
+          if shell.host_name == msg["host_name"]
+            destroy_shellinabox_instance(shell)
+          end
         rescue Exception => e
           DaemonKit.logger.error e.message
           DaemonKit.logger.error e.backtrace
@@ -163,13 +187,70 @@ module NetlabHandler
       )
     end
 
-    def send_shellinabox_notif(shell)
+    def destroy_shellinabox_instance(shell)
+      data = {
+        "workspace" => shell.virtual_machine.workspace.id,
+        "node" => shell.virtual_machine.name,
+        "user" => shell.user_id
+      }
+      send_disconnected_shellinabox_notif(data)
+      shell.destroy
+    end
+
+    def send_destroy_shellinabox_req(shell)
+      msg = { "id" => shell.id }
+      ex = @chan.fanout("shellmanager.#{DaemonKit.env}.stop")
+      ex.publish(msg.to_json, {:content_type => "application/json"})
+    end
+
+    def destroy_shellinabox(shell)
+      if not shell
+        DaemonKit.logger.error "Error: No shellinabox instance"
+      elsif shell.port_number < 0 or not shell.host_name
+        destroy_shellinabox_instance(shell)
+      else
+        send_destroy_shellinabox_req(shell)
+      end
+    end
+
+    def send_connected_shellinabox_notif(shell)
       if not shell
         DaemonKit.logger.error "Error: No shellinabox instance"
       elsif shell.port_number < 0 or not shell.host_name
         DaemonKit.logger.error "Error: Shellinabox process is not started yet"
       else
-        DaemonKit.logger.debug "Send shellinabox notification"
+        workspace = shell.virtual_machine.workspace.id
+        event = {
+          "workspace" => workspace,
+          "type" => "shell",
+          "node" => shell.virtual_machine.name,
+          "state" => "connected",
+          "user" => shell.user_id,
+          "host" => shell.host_name,
+          "port" => shell.port_number
+        }
+
+        ex = @chan.direct("#{DAEMON_CONF[:root_event]}.workspace.#{workspace}")
+        ex.publish(event.to_json, {:content_type => "application/json"}) do
+          DaemonKit.logger.debug("<< #{event.to_json}")
+        end
+      end
+    end
+
+    def send_disconnected_shellinabox_notif(req)
+      workspace = req['workspace']
+
+      event = {
+        "workspace" => workspace,
+        "type" => "shell",
+        "node" => req["node"],
+        "state" => "disconnected",
+        "user" => req["user"]
+      }
+
+      ex = @chan.direct("#{DAEMON_CONF[:root_event]}.workspace.#{workspace}")
+      ex.publish(event.to_json, {:content_type => "application/json"}) do
+        DaemonKit.logger.debug("<< #{event.to_json}")
       end
     end
   end
