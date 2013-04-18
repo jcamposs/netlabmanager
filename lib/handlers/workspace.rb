@@ -2,6 +2,7 @@ module NetlabHandler
   class WorkspaceHandler < NetlabManager::ServiceHandler
     def start
       @chan = AMQP::Channel.new
+      @chan.auto_recovery = true
 
       init_state_svc
       init_update_svc

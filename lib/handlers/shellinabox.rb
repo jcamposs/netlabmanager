@@ -13,9 +13,11 @@ module NetlabHandler
     private
     def init_amqp_stuff
       @chan = AMQP::Channel.new
+      @chan.auto_recovery = true
 
       #Request queues:
       init_connect_svc
+      init_disconnect_svc
 
       #Event queues:
       init_started_queue

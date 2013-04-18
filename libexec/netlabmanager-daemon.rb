@@ -20,10 +20,10 @@ DaemonKit::AMQP.run do |connection|
   # fine here.
 
   # Uncomment this for connection keep-alive
-  # connection.on_tcp_connection_loss do |client, settings|
-  #   DaemonKit.logger.debug("AMQP connection status changed: #{status}")
-  #   client.reconnect(false, 1)
-  # end
+  connection.on_tcp_connection_loss do |connection, settings|
+    DaemonKit.logger.debug("AMQP connection loss. Reconnect in 2 seconds")
+    connection.reconnect(false, 2)
+  end
 
   NetlabManager.init_services
 end
