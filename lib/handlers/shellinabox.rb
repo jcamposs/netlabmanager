@@ -6,7 +6,9 @@ module NetlabHandler
       init_amqp_stuff
       @running = true
       NetlabEvent.on "vm closed" do |id|
-        # TODO: Stop all shellinaboxes associated with this virtual machine
+        Shellinabox.find_all_by_virtual_machine_id(id).each do |shell|
+          destroy_shellinabox(shell)
+        end
       end
       return true
     end
