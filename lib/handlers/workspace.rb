@@ -1,3 +1,5 @@
+require 'netlabevent'
+
 module NetlabHandler
   class WorkspaceHandler < NetlabManager::ServiceHandler
     def start
@@ -164,6 +166,7 @@ module NetlabHandler
               vm.port_number = node["port"]
             else
               vm.port_number = -1
+              NetlabEvent.emit("vm closed", vm.id)
             end
             vm.save
             nodes.push({

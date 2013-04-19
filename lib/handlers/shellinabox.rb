@@ -1,8 +1,13 @@
+require 'netlabevent'
+
 module NetlabHandler
   class ShellinaboxHandler < NetlabManager::ServiceHandler
     def start
       init_amqp_stuff
       @running = true
+      NetlabEvent.on "vm closed" do |id|
+        # TODO: Stop all shellinaboxes associated with this virtual machine
+      end
       return true
     end
 
