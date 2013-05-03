@@ -153,6 +153,29 @@ module NetlabHandler
       end
     end
 
+    def update_state(vm, node, e)
+      if vm.state == node["state"]
+        e["modified"] = e["modified"] or false
+        return
+      end
+
+      vm.state = node["state"]
+      if vm.state == "started"
+        vm.port_number = node["port"]
+      else
+        vm.port_number = -1
+        NetlabEvent.emit("vm closed", vm.id)
+      end
+      vm.save
+
+      e["state"] = vm.state
+      e["modified"] = (e["modified"] or true)
+    end
+
+    def update_ifaces(vm, node, e)
+      DaemonKit.logger.debug("TODO: Update interfaces!")
+    end
+
     def uptade_workspace(msg)
       nodes = []
 
@@ -160,19 +183,19 @@ module NetlabHandler
         msg["nodes"].each do |node|
           vm = VirtualMachine.find_by_workspace_id_and_name(msg["workspace"],
                                                                    node["name"])
-          if vm and vm.state != node["state"]
-            vm.state = node["state"]
-            if vm.state == "started"
-              vm.port_number = node["port"]
-            else
-              vm.port_number = -1
-              NetlabEvent.emit("vm closed", vm.id)
-            end
-            vm.save
-            nodes.push({
-              "name" => vm.name,
-              "state" => vm.state
-            })
+          e = {
+            "name" => vm.name,
+            "modified" => false
+          }
+
+          if vm
+            update_state(vm, node, e) if node["state"]
+            update_ifaces(vm, node, e) if node["ifaces"]
+          end
+
+          if e["modified"]
+            e.delete("modified")
+            nodes.push(e)
           end
         end
       end
