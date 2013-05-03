@@ -173,7 +173,29 @@ module NetlabHandler
     end
 
     def update_ifaces(vm, node, e)
-      DaemonKit.logger.debug("TODO: Update interfaces!")
+      interfaces = []
+
+      Interface.transaction do
+        node["interfaces"].each do |i|
+          iface = Interface.find_by_virtual_machine_id_and_name(vm.id,
+                                                                 i["interface"])
+          if iface
+            if iface.ip != i["ip"]
+              iface.ip = i["ip"]
+              iface.save
+              interfaces.push({
+                "interface" => i["interface"],
+                "ip" => i["ip"]
+              })
+            end
+          end
+        end
+      end
+
+      if interfaces.length > 0
+        e["interfaces"] = interfaces
+        e["modified"] = (e["modified"] or true)
+      end
     end
 
     def uptade_workspace(msg)
@@ -190,7 +212,7 @@ module NetlabHandler
 
           if vm
             update_state(vm, node, e) if node["state"]
-            update_ifaces(vm, node, e) if node["ifaces"]
+            update_ifaces(vm, node, e) if node["interfaces"]
           end
 
           if e["modified"]
