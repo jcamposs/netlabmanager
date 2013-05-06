@@ -134,7 +134,17 @@ module NetlabHandler
       nodes = {}
       error = false
       VirtualMachine.find_all_by_workspace_id(id).each do |vm|
-        nodes[vm.name] = vm.state
+        nodes[vm.name] = {
+          "state" => vm.state,
+          "interfaces" => []
+        }
+
+        Interface.where(["virtual_machine_id = ? and ip", vm.id]).each do |i|
+          nodes[vm.name]["interfaces"].push({
+            "interface" => i.name,
+            "ip" => i.ip
+          })
+        end
       end
 
       return NetlabManager.render("workspace_state.js.erb", binding)

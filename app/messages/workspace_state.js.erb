@@ -10,7 +10,22 @@
       <% nodes.keys.each_with_index do |node, index| %>
         {
           "name": "<%= node %>",
-          "state": "<%= nodes[node] %>"
+          <% if nodes[node]['interfaces'].length > 0 %>
+            "state": "<%= nodes[node]['state'] %>",
+            "interfaces": [
+              <% nodes[node]['interfaces'].each_with_index do |e, i| %>
+                {
+                  "interface": "<%= e['interface'] %>",
+                  "ip": "<%= e['ip'] %>"
+                }
+                <% if i < nodes[node]['interfaces'].length - 1 %>
+                  ,
+                <% end %>
+              <% end %>
+            ]
+          <% else %>
+            "state": "<%= nodes[node]['state'] %>"
+          <% end %>
         }
         <% if index < nodes.keys.size - 1 %>
           ,
